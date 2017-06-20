@@ -38,7 +38,7 @@ import subprocess
 from ansible.errors import AnsibleError
 from ansible.plugins.connection import ConnectionBase
 from ansible.utils.vars import merge_hash
-from ansible.utils.unicode import to_bytes
+from ansible.module_utils._text import to_bytes
 
 try:
     from __main__ import display
@@ -83,7 +83,7 @@ class MachineCtl(object):
         ''' Queries the installed version of machinectl/systemd '''
 
         try:
-            version_output = subprocess.check_output([self.command, '--version'])
+            version_output = subprocess.getoutput('machinectl --version')
             matched = re.match(r'\Asystemd\s+(\d+)\D', version_output)
             return (matched.groups())[0]
         except subprocess.CalledProcessError as e:
@@ -172,7 +172,7 @@ class MachineCtl(object):
         ''' Yields machine properties in key-value pairs '''
         returncode, stdout, stderr = self.run_command('show', machine=machine)
 
-        for line in stdout.splitlines():
+        for line in stdout.decode().splitlines():
             yield line.strip().split('=', 2)
 
 
@@ -367,7 +367,7 @@ class Connection(ConnectionBase):
                                           machine=self.machine, stdin=slave)
 
         os.close(slave)
-        stdin = os.fdopen(master, 'w', 0)
+        stdin = os.fdopen(master, 'w', 1)
 
         ## SSH state machine
         #
@@ -443,14 +443,14 @@ class Connection(ConnectionBase):
             # listening to the pipe if it's been closed.
 
             if p.stdout in rfd:
-                chunk = p.stdout.read()
+                chunk = p.stdout.read().decode()
                 if chunk == '':
                     rpipes.remove(p.stdout)
                 tmp_stdout += chunk
                 display.debug("stdout chunk (state=%s):\n>>>%s<<<\n" % (state, chunk))
 
             if p.stderr in rfd:
-                chunk = p.stderr.read()
+                chunk = p.stderr.read().decode()
                 if chunk == '':
                     rpipes.remove(p.stderr)
                 tmp_stderr += chunk
