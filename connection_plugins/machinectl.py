@@ -38,7 +38,7 @@ import subprocess
 from ansible.errors import AnsibleError
 from ansible.plugins.connection import ConnectionBase
 from ansible.utils.vars import merge_hash
-from ansible.utils.unicode import to_bytes
+from ansible.module_utils._text import to_bytes
 
 try:
     from __main__ import display
